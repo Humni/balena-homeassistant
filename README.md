@@ -1,3 +1,8 @@
+# Customization Notes
+
+1. Added frigate from https://github.com/klutchell/balena-frigate
+
+
 # Balena Home Assistant
 Home Assistant on balena! Why?
 - Easy, secure remote access out of the box - no changes to your router required

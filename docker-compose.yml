@@ -2,6 +2,7 @@ version: '2'
 volumes:
     config:
     mosquitto:
+    media:
 services:
   homeassistant:
     build: homeassistant
@@ -27,3 +28,47 @@ services:
       - 'config:/hass-config'
     environment:
       - HC_BASEPATH=/hass-config
+
+  # https://blakeblackshear.github.io/frigate/installation
+  frigate:
+    build: frigate
+    privileged: true
+    ports:
+      - "80:5000"
+      - "1935:1935" # RTMP feeds
+    volumes:
+      - config:/config:ro
+      - media:/media/frigate
+    tmpfs:
+      - /tmp/cache
+    shm_size: 2048M
+    environment:
+      FRIGATE_RTSP_PASSWORD: "balena"
+      CONFIG_FILE: "/config/frigate.yml"
+    labels:
+      - io.balena.features.kernel-modules=1
+
+  # https://hub.docker.com/r/codercom/code-server
+  code-server:
+    image: codercom/code-server:4.1.0
+    command:
+      - --port=8080
+      - --auth=none
+      - --extensions-dir=/config/.vscode
+      - --user-data-dir=/config/.vscode
+      - /config
+    working_dir: /config
+    ports:
+      - 8080:8080/tcp
+    volumes:
+      - config:/config
+    user: root
+
+  # https://github.com/balenablocks/hostname
+  hostname:
+    image: balenablocks/hostname
+    restart: no
+    labels:
+      io.balena.features.supervisor-api: 1
+    environment:
+      SET_HOSTNAME: frigate
