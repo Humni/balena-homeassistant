@@ -3,14 +3,21 @@ volumes:
     config:
     mosquitto:
     media:
+    unifi:
 services:
+
+  #############################
+  #
+  # Home Assistant Setup
+  #
+  #############################
   homeassistant:
     build: homeassistant
     ports:
       - 80:8123
     privileged: true
     volumes:
-      - 'config:/config'
+      - config:/config
     restart: always
   mqtt:
     build: mqtt
@@ -23,43 +30,24 @@ services:
     image: "causticlab/hass-configurator-docker:latest"
     restart: always
     ports:
-      - "3218:3218"
+      - 3218:3218
     volumes:
       - 'config:/hass-config'
     environment:
       - HC_BASEPATH=/hass-config
 
-  # https://blakeblackshear.github.io/frigate/installation
-  frigate:
-    build: frigate
-    privileged: true
-    ports:
-      - "80:5000"
-      - "1935:1935" # RTMP feeds
-    volumes:
-      - config:/config:ro
-      - media:/media/frigate
-    tmpfs:
-      - /tmp/cache
-    shm_size: 2048M
-    environment:
-      FRIGATE_RTSP_PASSWORD: "balena"
-      CONFIG_FILE: "/config/frigate.yml"
-    labels:
-      - io.balena.features.kernel-modules=1
-
   # https://hub.docker.com/r/codercom/code-server
   code-server:
     image: codercom/code-server:4.1.0
     command:
-      - --port=8080
+      - --port=9000
       - --auth=none
       - --extensions-dir=/config/.vscode
       - --user-data-dir=/config/.vscode
       - /config
     working_dir: /config
     ports:
-      - 8080:8080/tcp
+      - 9000:9000
     volumes:
       - config:/config
     user: root
@@ -71,4 +59,58 @@ services:
     labels:
       io.balena.features.supervisor-api: 1
     environment:
-      SET_HOSTNAME: frigate
+      SET_HOSTNAME: homeassistant.local
+
+
+  #############################
+  #
+  # Camera NVR
+  #
+  #############################
+  # https://blakeblackshear.github.io/frigate/installation
+  frigate:
+    build: frigate
+    privileged: true
+    ports:
+      - "80:5000"
+      - "1935:1935" # RTMP feeds
+    volumes:
+      - config:/config
+      - media:/media/frigate
+    tmpfs:
+      - /tmp/cache
+    shm_size: 2048M
+    environment:
+      FRIGATE_RTSP_PASSWORD: "balena"
+      CONFIG_FILE: "/config/frigate.yml"
+    labels:
+      - io.balena.features.kernel-modules=1
+
+
+  #############################
+  #
+  # Unifi Controller
+  #
+  #############################
+  # https://hub.docker.com/r/linuxserver/unifi-controller
+  unifi-controller:
+    image: lscr.io/linuxserver/unifi-controller
+    container_name: unifi-controller
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MEM_LIMIT=1024 #optional
+      - MEM_STARTUP=1024 #optional
+    volumes:
+      - unifi:/config
+    ports:
+      - 8443:8443
+      - 3478:3478/udp
+      - 10001:10001/udp
+      - 8080:8080
+      - 1900:1900/udp   #optional
+      - 8843:8843       #optional
+      - 8880:8880       #optional
+      - 6789:6789       #optional
+      - 5514:5514/udp   #optional
+    restart: unless-stopped

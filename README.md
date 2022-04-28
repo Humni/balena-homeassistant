@@ -2,6 +2,20 @@
 
 1. Added frigate from https://github.com/klutchell/balena-frigate
 
+## Future Steps:
+
+1. Setup Coral AI dongle - https://coral.ai/products/
+2. Test camera setup with Frigate
+3. Setup Local Tuya Platform
+4. Setup AppDaemon https://github.com/Humni/balena-homeassistant#appdaemonhadashboard
+5. Setup Grafana and InfluxDB https://github.com/Humni/balena-homeassistant#grafana-and-influxdb
+
+# Deploy
+
+```
+balena login
+balena push gh_humni/home-assistant
+```
 
 # Balena Home Assistant
 Home Assistant on balena! Why?
